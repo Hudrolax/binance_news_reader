@@ -7,6 +7,7 @@ import sys
 from datetime import datetime
 import pandas as pd
 import sqlite3
+from time import sleep
 
 sys.setrecursionlimit(10000)
 NEWS_URL = 'https://www.binance.com/ru/support/announcement/c-49?navId=49'
@@ -41,14 +42,20 @@ def get_binance_news():
     return pd.DataFrame(news)
 
 
-if __name__ == '__main__':
-    df = get_binance_news()
-    con = sqlite3.connect('news.db')
-    try:
-        df_sql = pd.read_sql('SELECT * FROM news', con)
-    except pandas.io.sql.DatabaseError:
-        df_sql = pd.DataFrame(columns=['title', 'time'])
-    df.to_sql('news', con=con, if_exists='replace', index=False)
-    df = df.merge(df_sql, on=['title', 'time'], how='left', indicator=True)
-    df = df[df['_merge'] == 'left_only'].drop('_merge', axis=1).reset_index()
+def send_to_telegram(df):
     pprint(df)
+
+
+if __name__ == '__main__':
+    while True:
+        df = get_binance_news()
+        con = sqlite3.connect('news.db')
+        try:
+            df_sql = pd.read_sql('SELECT * FROM news', con)
+        except pandas.io.sql.DatabaseError:
+            df_sql = pd.DataFrame(columns=['title', 'time'])
+        df.to_sql('news', con=con, if_exists='replace', index=False)
+        df = df.merge(df_sql, on=['title', 'time'], how='left', indicator=True)
+        df = df[df['_merge'] == 'left_only'].drop('_merge', axis=1)
+        send_to_telegram(df)
+        sleep(300)
