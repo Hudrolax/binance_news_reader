@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 news.db
 .idea/
+config.py

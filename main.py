@@ -8,9 +8,9 @@ from datetime import datetime
 import pandas as pd
 import sqlite3
 from time import sleep
+from config import NEWS_URL, UNI_TELEBOT_URL
 
 sys.setrecursionlimit(10000)
-NEWS_URL = 'https://www.binance.com/ru/support/announcement/c-49?navId=49'
 
 
 def get_delist_rec(_obj, _news):
@@ -43,7 +43,18 @@ def get_binance_news():
 
 
 def send_to_telegram(df):
-    pprint(df)
+    if not df.empty:
+        pprint(df)
+        text = 'Новости Binance:\n'
+        for index, row in df.iterrows():
+            text += row['time'] + ' ' + row['title'] + '\n'
+        try:
+            requests.post(UNI_TELEBOT_URL, data=json.dumps({
+                'user_id': '',
+                'text': text
+            }, indent=4))
+        except Exception as Ex:
+            print(Ex)
 
 
 if __name__ == '__main__':
